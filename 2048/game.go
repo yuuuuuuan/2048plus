@@ -2,10 +2,6 @@ package game2048
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
-	"log"
 )
 
 const (
@@ -14,33 +10,12 @@ const (
 	boardSize    = 8
 )
 
-var (
-	scoreFont font.Face
-	scoreNum  = 0
-	scoreHigh = 0
-)
-
-func init() {
-	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
-	if err != nil {
-		log.Fatal(err)
-	}
-	const dpi = 72
-	scoreFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    60,
-		DPI:     dpi,
-		Hinting: font.HintingVertical,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // Game represents a game state.
 type Game struct {
 	input      *Input
 	board      *Board
 	boardImage *ebiten.Image
+	profile    *Profile
 }
 
 // NewGame generates a new Game object.
@@ -61,6 +36,8 @@ func (g *Game) Layout(int, int) (screenWidth, screenHeight int) {
 }
 
 func (g *Game) Update() error {
+	//g.profile.button1.Update(g.input)
+	//g.profile.button2.Update(g.input)
 	g.input.Update()
 	if err := g.board.Update(g.input); err != nil {
 		return err

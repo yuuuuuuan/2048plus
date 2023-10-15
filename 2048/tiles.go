@@ -14,6 +14,9 @@ import (
 	"strconv"
 )
 
+// tileSmallFont用于value为个位数的tiles上=====2，4，8
+// tileNormalFont用于value为两位数的tiles上====16，32，64
+// tileBigFont用于value为三位数的tiles上=======128，256，，，
 var (
 	tileSmallFont  font.Face
 	tileNormalFont font.Face
@@ -21,19 +24,20 @@ var (
 )
 
 func init() {
-	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	//创建字体
+	tt, err := opentype.Parse(fonts.PressStart2P_ttf)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Parse: %v", err)
 	}
-
-	const dpi = 72
+	//分别配置三种字体
+	const dpi = 60
 	tileSmallFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    24,
 		DPI:     dpi,
 		Hinting: font.HintingVertical,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewFace: %v", err)
 	}
 	tileNormalFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    32,
@@ -41,7 +45,7 @@ func init() {
 		Hinting: font.HintingVertical,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewFace: %v", err)
 	}
 	tileBigFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    48,
@@ -49,7 +53,7 @@ func init() {
 		Hinting: font.HintingVertical,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewFace: %v", err)
 	}
 }
 
@@ -63,43 +67,17 @@ type TileData struct {
 // Tile represents a tile information including TileData and animation states.
 type Tile struct {
 	current TileData
-
 	// next represents a next tile information after moving.
 	// next is empty when the tile is not about to move.
-	next TileData
-
+	next              TileData
 	movingCount       int
 	startPoppingCount int
 	poppingCount      int
 }
 
-// Pos returns the tile's current position.
-// Pos is used only at testing so far.
-func (t *Tile) Pos() (int, int) {
-	return t.current.x, t.current.y
-}
-
-// NextPos returns the tile's next position.
-// NextPos is used only at testing so far.
-func (t *Tile) NextPos() (int, int) {
-	return t.next.x, t.next.y
-}
-
-// Value returns the tile's current value.
-// Value is used only at testing so far.
-func (t *Tile) Value() int {
-	return t.current.value
-}
-
-// NextValue returns the tile's current value.
-// NextValue is used only at testing so far.
-func (t *Tile) NextValue() int {
-	return t.next.value
-}
-
 // NewTile creates a new Tile object.
 func NewTile(value int, x, y int) *Tile {
-	return &Tile{
+	tile := &Tile{
 		current: TileData{
 			value: value,
 			x:     x,
@@ -107,15 +85,20 @@ func NewTile(value int, x, y int) *Tile {
 		},
 		startPoppingCount: maxPoppingCount,
 	}
+	return tile
 }
 
 // IsMoving returns a boolean value indicating if the tile is animating.
 func (t *Tile) IsMoving() bool {
-	return 0 < t.movingCount
+	if t.movingCount == 0 {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (t *Tile) stopAnimation() {
-	if 0 < t.movingCount {
+	if t.movingCount != 0 {
 		t.current = t.next
 		t.next = TileData{}
 	}
@@ -272,7 +255,7 @@ func addRandomTile(tiles map[*Tile]struct{}, size int) error {
 		availableCells = append(availableCells, i)
 	}
 	if len(availableCells) == 0 {
-		return errors.New("twenty48: there is no space to add a new tile")
+		return errors.New("2048: there is no space to add a new tile")
 	}
 	c := availableCells[rand.Intn(len(availableCells))]
 	v := 2

@@ -32,21 +32,6 @@ const (
 	touchStateInvalid
 )
 
-// String returns a string representing the direction.
-func (d Dir) String() string {
-	switch d {
-	case DirUp:
-		return "Up"
-	case DirRight:
-		return "Right"
-	case DirDown:
-		return "Down"
-	case DirLeft:
-		return "Left"
-	}
-	panic("not reach")
-}
-
 // Vector returns a [-1, 1] value for each axis.
 func (d Dir) Vector() (x, y int) {
 	switch d {
@@ -98,13 +83,17 @@ func vecToDir(dx, dy int) (Dir, bool) {
 	if abs(dx) < abs(dy) {
 		if dy < 0 {
 			return DirUp, true
+		} else {
+			return DirDown, true
 		}
-		return DirDown, true
+
 	}
 	if dx < 0 {
 		return DirLeft, true
+	} else {
+		return DirRight, true
 	}
-	return DirRight, true
+
 }
 
 // Update updates the current input states.
@@ -202,4 +191,12 @@ func (i *Input) Dir() (Dir, bool) {
 		return i.touchDir, true
 	}
 	return 0, false
+}
+
+func (i *Input) Click() (int, int, bool) {
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		x, y := ebiten.CursorPosition()
+		return x, y, true
+	}
+	return -1, -1, false
 }
