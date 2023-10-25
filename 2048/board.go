@@ -3,6 +3,7 @@ package game2048
 import (
 	"errors"
 	"github.com/hajimehoshi/ebiten/v2"
+	_ "github.com/hajimehoshi/ebiten/v2"
 )
 
 var taskTerminated = errors.New("2048: task terminated")
@@ -17,17 +18,17 @@ type Board struct {
 }
 
 // NewBoard generates a new Board with giving a size.
-func NewBoard(size int) (*Board, error) {
+func NewBoard(size int) *Board {
 	b := &Board{
 		size:  size,
 		tiles: map[*Tile]struct{}{},
 	}
 	for i := 0; i < 2; i++ {
 		if err := addRandomTile(b.tiles, b.size); err != nil {
-			return nil, err
+			return nil
 		}
 	}
-	return b, nil
+	return b
 }
 
 func (b *Board) tileAt(x, y int) *Tile {

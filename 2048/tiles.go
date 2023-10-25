@@ -57,6 +57,11 @@ func init() {
 	}
 }
 
+const (
+	maxMovingCount  = 5
+	maxPoppingCount = 6
+)
+
 // TileData represents a tile information like a value and a position.
 type TileData struct {
 	value int
@@ -64,15 +69,17 @@ type TileData struct {
 	y     int
 }
 
-// Tile represents a tile information including TileData and animation states.
-type Tile struct {
-	current TileData
-	// next represents a next tile information after moving.
-	// next is empty when the tile is not about to move.
-	next              TileData
+type TilePop struct {
 	movingCount       int
 	startPoppingCount int
 	poppingCount      int
+}
+
+// Tile represents a tile information including TileData and animation states.
+type Tile struct {
+	current TileData
+	next    TileData
+	pop     TilePop
 }
 
 // NewTile creates a new Tile object.
@@ -83,14 +90,16 @@ func NewTile(value int, x, y int) *Tile {
 			x:     x,
 			y:     y,
 		},
-		startPoppingCount: maxPoppingCount,
+		pop: TilePop{
+			startPoppingCount: maxPoppingCount,
+		},
 	}
 	return tile
 }
 
 // IsMoving returns a boolean value indicating if the tile is animating.
 func (t *Tile) IsMoving() bool {
-	if t.movingCount == 0 {
+	if t.pop.movingCount == 0 {
 		return false
 	} else {
 		return true
@@ -98,13 +107,13 @@ func (t *Tile) IsMoving() bool {
 }
 
 func (t *Tile) stopAnimation() {
-	if t.movingCount != 0 {
+	if t.pop.movingCount != 0 {
 		t.current = t.next
 		t.next = TileData{}
 	}
-	t.movingCount = 0
-	t.startPoppingCount = 0
-	t.poppingCount = 0
+	t.pop.movingCount = 0
+	t.pop.startPoppingCount = 0
+	t.pop.poppingCount = 0
 }
 
 func tileAt(tiles map[*Tile]struct{}, x, y int) *Tile {
@@ -124,7 +133,7 @@ func tileAt(tiles map[*Tile]struct{}, x, y int) *Tile {
 func currentOrNextTileAt(tiles map[*Tile]struct{}, x, y int) *Tile {
 	var result *Tile
 	for t := range tiles {
-		if 0 < t.movingCount {
+		if 0 < t.pop.movingCount {
 			if t.next.x != x || t.next.y != y || t.next.value == 0 {
 				continue
 			}
@@ -140,11 +149,6 @@ func currentOrNextTileAt(tiles map[*Tile]struct{}, x, y int) *Tile {
 	}
 	return result
 }
-
-const (
-	maxMovingCount  = 5
-	maxPoppingCount = 6
-)
 
 // MoveTiles moves tiles in the given tiles map if possible.
 // MoveTiles returns true if there are tiles that are to move, otherwise false.
@@ -199,7 +203,7 @@ func MoveTiles(tiles map[*Tile]struct{}, size int, dir Dir) bool {
 				if t.current.value != tt.current.value {
 					break
 				}
-				if 0 < tt.movingCount && tt.current.value != tt.next.value {
+				if 0 < tt.pop.movingCount && tt.current.value != tt.next.value {
 					// tt is already being merged with another tile.
 					// Break here without updating (ii, jj).
 					break
@@ -219,20 +223,20 @@ func MoveTiles(tiles map[*Tile]struct{}, size int, dir Dir) bool {
 				tt.next.value = 0
 				tt.next.x = ii
 				tt.next.y = jj
-				tt.movingCount = maxMovingCount
+				tt.pop.movingCount = maxMovingCount
 			}
 			next.x = ii
 			next.y = jj
 			if t.current != next {
 				t.next = next
-				t.movingCount = maxMovingCount
+				t.pop.movingCount = maxMovingCount
 			}
 		}
 	}
 	if !moved {
 		for t := range tiles {
 			t.next = TileData{}
-			t.movingCount = 0
+			t.pop.movingCount = 0
 		}
 	}
 	return moved
@@ -272,19 +276,19 @@ func addRandomTile(tiles map[*Tile]struct{}, size int) error {
 // Update updates the tile's animation states.
 func (t *Tile) Update() error {
 	switch {
-	case 0 < t.movingCount:
-		t.movingCount--
-		if t.movingCount == 0 {
+	case 0 < t.pop.movingCount:
+		t.pop.movingCount--
+		if t.pop.movingCount == 0 {
 			if t.current.value != t.next.value && 0 < t.next.value {
-				t.poppingCount = maxPoppingCount
+				t.pop.poppingCount = maxPoppingCount
 			}
 			t.current = t.next
 			t.next = TileData{}
 		}
-	case 0 < t.startPoppingCount:
-		t.startPoppingCount--
-	case 0 < t.poppingCount:
-		t.poppingCount--
+	case 0 < t.pop.startPoppingCount:
+		t.pop.startPoppingCount--
+	case 0 < t.pop.poppingCount:
+		t.pop.poppingCount--
 	}
 	return nil
 }
@@ -324,25 +328,25 @@ func (t *Tile) Draw(boardImage *ebiten.Image) {
 	nx := ni*tileSize + (ni+1)*tileMargin
 	ny := nj*tileSize + (nj+1)*tileMargin
 	switch {
-	case 0 < t.movingCount:
-		rate := 1 - float64(t.movingCount)/maxMovingCount
+	case 0 < t.pop.movingCount:
+		rate := 1 - float64(t.pop.movingCount)/maxMovingCount
 		x = mean(x, nx, rate)
 		y = mean(y, ny, rate)
-	case 0 < t.startPoppingCount:
-		rate := 1 - float64(t.startPoppingCount)/float64(maxPoppingCount)
+	case 0 < t.pop.startPoppingCount:
+		rate := 1 - float64(t.pop.startPoppingCount)/float64(maxPoppingCount)
 		scale := meanF(0.0, 1.0, rate)
 		op.GeoM.Translate(float64(-tileSize/2), float64(-tileSize/2))
 		op.GeoM.Scale(scale, scale)
 		op.GeoM.Translate(float64(tileSize/2), float64(tileSize/2))
-	case 0 < t.poppingCount:
+	case 0 < t.pop.poppingCount:
 		const maxScale = 1.2
 		rate := 0.0
-		if maxPoppingCount*2/3 <= t.poppingCount {
+		if maxPoppingCount*2/3 <= t.pop.poppingCount {
 			// 0 to 1
-			rate = 1 - float64(t.poppingCount-2*maxPoppingCount/3)/float64(maxPoppingCount/3)
+			rate = 1 - float64(t.pop.poppingCount-2*maxPoppingCount/3)/float64(maxPoppingCount/3)
 		} else {
 			// 1 to 0
-			rate = float64(t.poppingCount) / float64(maxPoppingCount*2/3)
+			rate = float64(t.pop.poppingCount) / float64(maxPoppingCount*2/3)
 		}
 		scale := meanF(1.0, maxScale, rate)
 		op.GeoM.Translate(float64(-tileSize/2), float64(-tileSize/2))

@@ -3,6 +3,7 @@ package main
 import (
 	game2048 "2048/2048"
 	"github.com/hajimehoshi/ebiten/v2"
+	_ "github.com/hajimehoshi/ebiten/v2"
 	"log"
 )
 

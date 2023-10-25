@@ -7,27 +7,28 @@ import (
 const (
 	ScreenWidth  = 840
 	ScreenHeight = 1200
-	boardSize    = 8
+	boardSize    = 4
 )
 
 // Game represents a game state.
 type Game struct {
+	state      int
 	input      *Input
 	board      *Board
 	boardImage *ebiten.Image
-	profile    *Profile
+	//button     *Button
+	//profile    *Profile
 }
 
 // NewGame generates a new Game object.
 func NewGame() (*Game, error) {
 	g := &Game{
+		//state: gamestart,
 		input: NewInput(),
+		board: NewBoard(boardSize),
+		//button: NewButton("restart", 300, 300),
 	}
-	var err error
-	g.board, err = NewBoard(boardSize)
-	if err != nil {
-		return nil, err
-	}
+
 	return g, nil
 }
 
@@ -46,6 +47,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	//g.button.Draw(screen)
 	if g.boardImage == nil {
 		g.boardImage = ebiten.NewImage(g.board.Size())
 	}

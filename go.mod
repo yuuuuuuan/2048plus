@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/ebitengine/purego v0.5.0 // indirect
 	github.com/hajimehoshi/bitmapfont/v3 v3.0.0 // indirect
-	github.com/hajimehoshi/ebiten/v2 v2.6.0 // indirect
+	github.com/hajimehoshi/ebiten/v2 v2.6.2 // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/image v0.12.0 // indirect
